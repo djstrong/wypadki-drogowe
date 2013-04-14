@@ -26,12 +26,15 @@ if __name__=="__main__":
         date_str = date.strftime("%Y-%m-%d")
         print date_str
         url = city_url+date_str
+        print url
         
         resp = urllib2.urlopen(url)
         html = resp.read().decode('utf-8')
         html = parser.unescape(html) 
         weather[date_str] = {}
         w = weather[date_str]
+        w['deszcz']=0
+        w['snieg']=0
         
         #wschod/zachod
         match = re.search(date_str+r',.*?([0-9]{2}:[0-9]{2}:[0-9]{2}).*?([0-9]{2}:[0-9]{2}:[0-9]{2})',html,re.MULTILINE | re.U)
@@ -55,7 +58,7 @@ if __name__=="__main__":
         
         match = re.search(r'<td.*?class="kierunek".*?>(.*?)<',html,re.MULTILINE | re.U)
         if match:
-            w['wiatr[km/h]'] = float(match.group(1).strip())
+            w['wiatr'] = float(match.group(1).strip())
             
         match = re.search(r'<td.*?class="opady".*?>(.*?)</td>',html,re.MULTILINE | re.U)
         if match:
@@ -80,7 +83,7 @@ if __name__=="__main__":
                     splitted = [x.strip() for x in match.group(1).split('<br />') if x.strip()]
                     if len(splitted)==2:
                         t = splitted[0]
-                        val = re.search(r'[0-9]+-[0-9]+',splitted[1]).group(0)
+                        val = re.search(r'[0-9]+(-|>)([0-9]+)?',splitted[1]).group(0)
                         #w[t] = v
                     elif len(splitted)==1:
                         m = re.search(r'(\w+)\W+(.*)',splitted[0],re.MULTILINE | re.U)
@@ -110,7 +113,7 @@ if __name__=="__main__":
     
     print "\n".join(map(str,weather.iteritems()))
     
-    f = open('pogoda.log','w')
+    f = open('pogoda_%s.log'%sys.argv[1],'w')
     import json
     x = json.dumps(weather,sort_keys=True,indent=4, separators=(',', ': '))
     print x

@@ -46,10 +46,10 @@ if __name__=="__main__":
                 except:
                     date = datetime.datetime.strptime(tds[0].div.a['data-date'],'%B %d, %Y')
                 name = tds[1].text
-                holidays[date.strftime('%Y-%m-%d')] = name.encode('utf-8')
+                holidays[date.strftime('%Y-%m-%d')] = {'opis':name.encode('utf-8')}
                 
     
-    print holidays
+
     
     f = open('swieta.log','w')
     import json
