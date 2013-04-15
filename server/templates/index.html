@@ -1,0 +1,50 @@
+$def with (name,wypadki,daty)
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel='stylesheet' href='/static/css/main.css' />
+		<link rel='stylesheet' href='/static/css/visualize.css' />
+		<link rel='stylesheet' href='/static/css/visualize-light.css' />
+		<script src="/static/js/jquery-1.9.1.min.js" ></script>
+		<script src="/static/js/visualize.jQuery.js" ></script>
+	</head>
+	<title>Wypadki drogowe</title>
+	<body>
+		<header>
+			<h1>Wypadki drogowe</h1>
+		</header>
+		<div id="container">
+			<table id="wypadki">
+				<thead>
+					<tr>
+						<td></td>
+						$for w in daty:
+							<th scope="col">${w.data}</th>
+						
+					</tr>
+				</thead>
+				<tbody>
+					$for type in wypadki[0].keys():
+						<tr>
+							<th>${type}</th>
+							$for w in wypadki:
+								<td scope="row">${w.get(type) or 0}</td>
+						</tr>
+				</tbody>
+			</table>
+		</div>
+		<footer>
+			Zaawansowane techniki integracji systemów
+		</footer>
+		
+	<script type="text/javascript">
+		$$(document).ready(function(){
+			$$('#wypadki').visualize({type:'pie'});
+			$$('#wypadki').visualize({});
+			$$('#wypadki').visualize({type:'line'});
+			
+			
+		});
+	</script>
+	</body>
+</html>

@@ -1,0 +1,17 @@
+html, body, #container {
+	height: 100%;
+}
+
+body > #container {
+	height:auto;
+	min-height:100%;
+}
+
+footer {
+	clear:both;
+	position:relative;
+	z-index: 9999;
+	height: 50px;
+	margin-top: -50px;
+	vertical-align: bottom;
+}
