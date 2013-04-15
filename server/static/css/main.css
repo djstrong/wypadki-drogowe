@@ -1,10 +1,31 @@
 html, body, #container {
 	height: 100%;
+	font-size: 12pt;
 }
 
 body > #container {
 	height:auto;
 	min-height:100%;
+}
+
+#data_table {
+	font-size:8pt;
+}
+#tables {
+	margin:10px;
+}
+
+#graph{
+	margin:10px;
+}
+#config {
+	margin:10px;
+}
+#dates_form {
+	
+}
+#dates_form input{
+	width:80px;
 }
 
 footer {

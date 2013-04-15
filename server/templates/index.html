@@ -1,12 +1,14 @@
-$def with (name,wypadki,daty)
 <!DOCTYPE html>
 <html>
 	<head>
 		<link rel='stylesheet' href='/static/css/main.css' />
 		<link rel='stylesheet' href='/static/css/visualize.css' />
 		<link rel='stylesheet' href='/static/css/visualize-light.css' />
+		<link rel='stylesheet' href='/static/css/jquery-ui-1.10.2.custom.min.css' />
 		<script src="/static/js/jquery-1.9.1.min.js" ></script>
+		<script src="/static/js/jquery-ui-1.10.2.custom.min.js" ></script>
 		<script src="/static/js/visualize.jQuery.js" ></script>
+		<script src="/static/js/knockout-2.2.1.js" ></script>
 	</head>
 	<title>Wypadki drogowe</title>
 	<body>
@@ -14,36 +16,141 @@ $def with (name,wypadki,daty)
 			<h1>Wypadki drogowe</h1>
 		</header>
 		<div id="container">
-			<table id="wypadki">
-				<thead>
-					<tr>
-						<td></td>
-						$for w in daty:
-							<th scope="col">${w.data}</th>
+			<div id="tables" style="float:left;">
+			<form id="dates_form">
+				<fieldset style="float:left;">
+					<legend>Daty od-do</legend>
+				<input type="text" id="date_from" data-bind="value: date_from"/>
+				<input type="text" id="date_to" data-bind="value: date_to"/>
+				</fieldset>
+				<fieldset style="float:left;">
+					<legend>Granulacja</legend>
+					<label><input type="radio" name="granularity" value="monthly" data-bind="checked: date_granularity"/>Miesiecznie</label>
+					<br />
+					<label><input type="radio" name="granularity" value="quarterly" data-bind="checked: date_granularity"/>Kwartalnie</label>
+					<br/>
+					<label><input type="radio" name="granularity" value="yearly" data-bind="checked: date_granularity"/>Rocznie</label>
+				</fieldset>
+			</form>
+			<fieldset>
+				<legend>Dane</legend>
+				<table id="data_table">
+					<thead>
+
+					</thead>
+					<tbody>
 						
-					</tr>
-				</thead>
-				<tbody>
-					$for type in wypadki[0].keys():
-						<tr>
-							<th>${type}</th>
-							$for w in wypadki:
-								<td scope="row">${w.get(type) or 0}</td>
-						</tr>
-				</tbody>
-			</table>
+					</tbody>
+				</table>
+			</fieldset>
+			</div>
+			<div id="graph" style="float:left;">
+				<fieldset>
+					<legend>Wykres</legend>
+				</fieldset>
+			</div>
+			<div id="config" style="float:left;">
+				<form id="config_form">
+					<fieldset>
+						<legend>Konfiguracja</legend>
+						<select id="city" data-bind="options: cities, value: selected_city"></select>
+						<br />
+						Warunki:
+						<div id="conditions" data-bind="foreach: conditions">
+							<input type="radio" name="condition" data-bind="checked: $$root.selected_condition, value: $$data, attr: {id: $$data}" /><label data-bind="text: $$data, attr: {for: $$data}"></label><br/>
+						</div>
+						<br/>
+						
+						
+						<input type="button" id="refresh_button" value="Odśwież" data-bind="click: refreshView"/>
+					</fieldset>
+				</form>
+			</div>
 		</div>
 		<footer>
 			Zaawansowane techniki integracji systemów
 		</footer>
-		
+	<script type="text/html" id="person-template">
+    	<h3 data-bind="text: name"></h3>
+    	<p>Credits: <span data-bind="text: credits"></span></p>
+	</script>
 	<script type="text/javascript">
 		$$(document).ready(function(){
-			$$('#wypadki').visualize({type:'pie'});
-			$$('#wypadki').visualize({});
-			$$('#wypadki').visualize({type:'line'});
 			
+			function AppViewModel() {
+				var self = this;
+				
+				//table
+				//self.dates = ko.observableArray();
+				//self.rows = ko.observableArray();
+				
+				self.date_granularity = ko.observable("monthly");
+				self.date_from = ko.observable('2008-04-01');
+				self.date_to = ko.observable('2013-04-15');
+				self.selected_city = ko.observable('katowice');
+				self.selected_condition = ko.observable('pogoda,min_temp');
+				//Dummy data
+				self.cities = ['katowice','rzeszow'];
+				self.conditions = ko.observableArray([['pogoda','min_temp'],['pogoda','max_temp'],['pogoda','cisnienie']]);
+				
+				//Behaviour
+				self.refreshView = function() {
+					$$.getJSON('/get_data',{
+							date_from: self.date_from(),
+							date_to: self.date_to(),
+							selected_city: self.selected_city(),
+							selected_condition: self.selected_condition(),
+							granularity: self.date_granularity()
+						}
+					).done(function(data){
+						var rows = data['rows'];
+						
+						var head = $$('#data_table > thead');
+						head.append('<tr>');
+						var head_tr = $$(head.children()[0]);
+						head_tr.append('<td>');
+						
+						var tbody = $$('#data_table > tbody');
+						var done = {}						
+						for(var i=0;i<rows.length;i++){
+							var row=rows[i];
+							var date = row[0];
+							var th = $$('<th>');
+							th.html(date);
+							head_tr.append(th);
+							
+							for(var row_type in row[1]){
+								if(!done[row_type]){
+									var tr = $$('<tr>');
+									tr.attr('id',row_type);
+									var th = $$('<th>');
+									th.html(row_type);
+									tr.append(th);
+									tbody.append(tr);
+									done[row_type]=true;
+								}
+								var tr = $$('#'+row_type);
+								var td = $$('<td>');
+								td.html(row[1][row_type]);
+								tr.append(td);
+							}
+						}
+						
+						//$$('#data_table').visualize({type:'line'});
+						$$('#data_table').visualize({type:'bar'}).appendTo('#graph');
+						$$('#data_table').visualize({type:'line'}).appendTo('#graph');
+					})
+				}
+			}
 			
+			ko.applyBindings(new AppViewModel());
+			
+			$$('#date_from').datepicker({dateFormat:"yy-mm-dd"});
+			$$('#date_to').datepicker({dateFormat:"yy-mm-dd"});
+			
+			//visuals
+			$$('#refresh_button').button();
+			$$('#city').menu();
 		});
 	</script>
 	</body>
