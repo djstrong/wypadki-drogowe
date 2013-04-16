@@ -16,15 +16,17 @@
 			<h1>Wypadki drogowe</h1>
 		</header>
 		<div id="container">
-			<div id="tables" style="float:left;">
+			<div id="tables" style="float:left;" class="dash_container">
 			<form id="dates_form">
-				<fieldset style="float:left;">
+				<fieldset  style="float:left;">
 					<legend>Daty od-do</legend>
 				<input type="text" id="date_from" data-bind="value: date_from"/>
 				<input type="text" id="date_to" data-bind="value: date_to"/>
 				</fieldset>
 				<fieldset style="float:left;">
 					<legend>Granulacja</legend>
+					<label><input type="radio" name="granularity" value="monthly" data-bind="checked: date_granularity"/>Dziennie</label>
+					<br/>
 					<label><input type="radio" name="granularity" value="monthly" data-bind="checked: date_granularity"/>Miesiecznie</label>
 					<br />
 					<label><input type="radio" name="granularity" value="quarterly" data-bind="checked: date_granularity"/>Kwartalnie</label>
@@ -44,12 +46,12 @@
 				</table>
 			</fieldset>
 			</div>
-			<div id="graph" style="float:left;">
-				<fieldset>
+			<div id="graph" style="float:left;" class="dash_container">
+				<fieldset >
 					<legend>Wykres</legend>
 				</fieldset>
 			</div>
-			<div id="config" style="float:left;">
+			<div id="config" style="float:left;" class="dash_container">
 				<form id="config_form">
 					<fieldset>
 						<legend>Konfiguracja</legend>
@@ -106,11 +108,13 @@
 						var rows = data['rows'];
 						
 						var head = $$('#data_table > thead');
+						head.html('');
 						head.append('<tr>');
 						var head_tr = $$(head.children()[0]);
 						head_tr.append('<td>');
 						
 						var tbody = $$('#data_table > tbody');
+						tbody.html('');
 						var done = {}						
 						for(var i=0;i<rows.length;i++){
 							var row=rows[i];

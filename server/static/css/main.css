@@ -8,7 +8,7 @@ body > #container {
 	min-height:100%;
 }
 
-#data_table {
+#data_table, #graph {
 	font-size:8pt;
 }
 #tables {
@@ -35,4 +35,13 @@ footer {
 	height: 50px;
 	margin-top: -50px;
 	vertical-align: bottom;
+}
+
+
+
+.dash_container {
+	border: 1px solid #EEEEEE;
+	box-shadow: 0 1px 4px rgba(0, 0, 0.1, 0.2);
+	margin: 8px;
+	padding:10px;
 }
