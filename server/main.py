@@ -35,7 +35,7 @@ class Data(object):
                                                               WHEN cast(strftime('%m', date(data)) as integer) BETWEEN 7 and 9 THEN 'q3'
                                                               ELSE 'q4' END as combined_date'''
         
-        
+        print date_str
         #wez dane z wypadkow
         accidents = db.select('wypadki',what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni',where='miasto="%s" AND data>="%s" AND data<="%s"'%(params['selected_city'],params['date_from'],params['date_to']),order='id',group=group)
         
