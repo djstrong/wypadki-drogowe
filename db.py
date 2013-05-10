@@ -10,18 +10,20 @@ def create_db():
     c = conn.cursor()
 #    return str([self.date, self.przestepstwa_rozbojnicze, self.bojki_i_pobicia, self.kradzieze_z_wlamaniem, self.kradzieze, self.wypadki, self.zabici, self.ranni, self.nietrzezwi_kierowcy, self.kolizje])
 
-    c.execute('''CREATE TABLE wypadki (
-                                       id integer primary key,
-                                       data text,  
-                                       wypadki integer, 
-                                       zabici integer, 
-                                       ranni integer,
-                                       nietrzezwi_kierowcy integer, 
-                                       miasto text )''')
-    
+#    c.execute('''CREATE TABLE wypadki (
+#                                       id integer primary key,
+#                                       data text,  
+#                                       wypadki integer, 
+#                                       zabici integer, 
+#                                       ranni integer,
+#                                       nietrzezwi_kierowcy integer, 
+#                                       miasto text )''')
+
+
+  
     c.execute('''CREATE TABLE pogoda (
-                                      id integer primary key,
-                                      data text,
+                                      data DATE,
+                                      wojewodztwo INTEGER,
                                       max_temp integer,
                                       min_temp integer,
                                       wiatr real,
@@ -30,7 +32,8 @@ def create_db():
                                       snieg text,
                                       wschod text,
                                       zachod text,
-                                      miasto text
+                                      PRIMARY KEY (wojewodztwo, data),
+                                      FOREIGN KEY(wojewodztwo) REFERENCES wojewodztwa(id))
     )''')
     
     c.execute('''CREATE TABLE swieta (
@@ -38,6 +41,7 @@ def create_db():
                                       data text,
                                       opis text
                                     )''')
+    c.execute('CREATE UNIQUE INDEX "data_miasto" on pogoda (data ASC, miasto ASC)')
     
 def fill_db():
     load_data('pogoda_Katowice.log',columns = ['max_temp','min_temp','wiatr','cisnienie','deszcz','snieg','wschod','zachod'],city='katowice',table='pogoda')
@@ -70,13 +74,14 @@ def load_wypadki(city):
     columns = ['wypadki','zabici','ranni','nietrzezwi_kierowcy']
 
 if __name__=="__main__":
-    if os.path.exists('wypadki.db'):
-        os.remove('wypadki.db')
+    #if os.path.exists('wypadki.db'):
+    #    os.remove('wypadki.db')
     conn = sqlite3.connect('wypadki.db')
     try:
         c = conn.cursor()
-        create_db()
-        fill_db()
+        #create_db()
+        #fill_db()
+        load_data('rzeszow.json',columns= ['wypadki','zabici','ranni','nietrzezwi_kierowcy'],city='rzeszow',table='wypadki')
     except Exception,e:
         print "exception",e
         
