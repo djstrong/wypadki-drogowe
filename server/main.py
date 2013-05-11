@@ -4,10 +4,11 @@ from operator import itemgetter
 
 urls = (
     '/', 'Index',
-    '/get_data','Data'
+    '/get_data','Data',
+    '/get_regions','Regions',
 )
 
-db = web.database(dbn='sqlite', db='wypadki.db')
+db = web.database(dbn='sqlite', db='nowe.db')
 render = web.template.render('templates/')
 
 class Index(object):
@@ -16,8 +17,8 @@ class Index(object):
     
 class Data(object):
     def GET(self):
-        print "GETTTTT"
-        params = web.input()
+        params = json.loads(web.input()['json'])
+        print "PARAMS: ",params
         
         granularity = params['granularity']
         print "GRANULARITY",granularity
@@ -36,23 +37,32 @@ class Data(object):
                                                               ELSE 'q4' END as combined_date'''
         
         #wez dane z wypadkow
-        accidents = db.select('wypadki',what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni',where='miasto="%s" AND data>="%s" AND data<="%s"'%(params['selected_city'],params['date_from'],params['date_to']),order='id',group=group)
         
+        
+        regions = db.select('wojewodztwa',where='id in (%s)'%",".join(params['regions']))
         
         #wez te druge dane
-        table = params['selected_condition'].split(',')[0]
-        param = params['selected_condition'].split(',')[1]
-        conditions = db.select(table,what=date_str+','+'avg('+param+') as '+param,where='miasto="%s" AND data>="%s" AND data<="%s"'%(params['selected_city'],params['date_from'],params['date_to']),order='id',group=group)
+        #table = params['selected_condition'].split(',')[0]
+        #param = params['selected_condition'].split(',')[1]
+        #conditions = db.select(table,what=date_str+','+'avg('+param+') as '+param,where='wojewodztwo in (%s) AND data>="%s" AND data<="%s"'%(",".join(params['regions']),params['date_from'],params['date_to']),order='id',group=group)
         
         
         result = {}
         
+        
+        
         rows = {}
-        for acc in accidents:
-            rows[acc['combined_date']]={'wypadki':acc['wypadki']}
-        for c in conditions:
-            if rows.has_key(c['combined_date']):
-                rows[c['combined_date']][param]=c[param]
+        for region in regions:
+            accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
+                                  what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
+                                  where='wojewodztwo="%s" AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
+                                  order='data',group=group)
+            rows[region['nazwa']]= {}
+            for acc in accidents:
+                rows[region['nazwa']][acc['combined_date']]={'wypadki':acc['wypadki']}
+        #for c in conditions:
+        #    if rows.has_key(c['combined_date']):
+        #        rows[c['combined_date']][param]=c[param]
         result['rows']=sorted(rows.items(),key=itemgetter(0))
         
         
@@ -64,7 +74,13 @@ class Data(object):
         
         
         
-    
+class Regions(object):
+    def GET(self):
+        regions = db.select('wojewodztwa')
+        print "regions",regions
+        results = [ {'id':r['id'],'name':r['nazwa']} for r in regions]
+        print "results",results
+        return json.dumps(results)
     
 if __name__=="__main__":
         app = web.application(urls, globals())

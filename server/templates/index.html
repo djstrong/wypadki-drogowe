@@ -47,15 +47,21 @@
 			</fieldset>
 			</div>
 			<div id="graph" style="float:left;" class="dash_container">
-				<fieldset >
+				<fieldset>
 					<legend>Wykres</legend>
+					<div id="graph_data"></div>
 				</fieldset>
 			</div>
 			<div id="config" style="float:left;" class="dash_container">
 				<form id="config_form">
 					<fieldset>
 						<legend>Konfiguracja</legend>
-						<select id="city" data-bind="options: cities, value: selected_city"></select>
+						<h3>Województwa</h3>
+						<div data-bind="foreach: regions">
+							<input type="checkbox" data-bind="value: $$data.id, checked: $$root.selected_regions, attr: {id: 'region_'+$$data.id}" />
+							<label data-bind="text: $$data.name, attr: {for: 'region_'+$$data.id}"></label>
+							<br/>
+						</div>
 						<br />
 						Warunki:
 						<div id="conditions" data-bind="foreach: conditions">
@@ -89,22 +95,30 @@
 				self.date_granularity = ko.observable("monthly");
 				self.date_from = ko.observable('2008-04-01');
 				self.date_to = ko.observable('2013-04-15');
-				self.selected_city = ko.observable('katowice');
-				self.selected_condition = ko.observable('pogoda,min_temp');
+				self.selected_regions = ko.observableArray();
+				self.selected_condition = ko.observable();
 				//Dummy data
 				self.cities = ['katowice','rzeszow'];
 				self.conditions = ko.observableArray([['pogoda','min_temp'],['pogoda','max_temp'],['pogoda','cisnienie']]);
 				
+				self.regions = ko.observableArray();
+				
 				//Behaviour
 				self.refreshView = function() {
-					$$.getJSON('/get_data',{
-							date_from: self.date_from(),
-							date_to: self.date_to(),
-							selected_city: self.selected_city(),
-							selected_condition: self.selected_condition(),
-							granularity: self.date_granularity()
-						}
-					).done(function(data){
+					console.log("selected_regions: "+self.selected_regions());
+					$$.ajax({
+							url: '/get_data',
+							dataType: 'json',
+							data: { 
+									json: ko.toJSON({
+										date_from: self.date_from(),
+										date_to: self.date_to(),
+										regions: self.selected_regions(),
+										selected_condition: self.selected_condition(),
+										granularity: self.date_granularity()
+									}) 
+								}
+					}).done(function(data){
 						var rows = data['rows'];
 						
 						var head = $$('#data_table > thead');
@@ -118,34 +132,40 @@
 						var done = {}						
 						for(var i=0;i<rows.length;i++){
 							var row=rows[i];
-							var date = row[0];
-							var th = $$('<th>');
-							th.html(date);
-							head_tr.append(th);
-							
-							for(var row_type in row[1]){
-								if(!done[row_type]){
-									var tr = $$('<tr>');
-									tr.attr('id',row_type);
-									var th = $$('<th>');
-									th.html(row_type);
-									tr.append(th);
-									tbody.append(tr);
-									done[row_type]=true;
+							var region = row[0]
+							var date_objs = row[1];
+							if(i==0){
+								for(var date in date_objs){
+									var th = $$('<th>')
+									th.html(date)
+									head_tr.append(th)
 								}
-								var tr = $$('#'+row_type);
-								var td = $$('<td>');
-								td.html(row[1][row_type]);
+							}
+							var tr = $$('<tr>')
+							var name = $$('<th>')
+							name.html(region)
+							tr.append(name)
+							for(var date in date_objs){
+								var td = $$('<td>')
+								td.html(date_objs[date].wypadki)
 								tr.append(td);
 							}
+							tbody.append(tr)
 						}
 						
 						//$$('#data_table').visualize({type:'line'});
-						$$('#data_table').visualize({type:'bar'}).appendTo('#graph');
-						$$('#data_table').visualize({type:'line'}).appendTo('#graph');
+						$$('#graph_data').html('');
+						$$('#data_table').visualize({type:'bar'}).appendTo('#graph_data');
+						$$('#data_table').visualize({type:'line'}).appendTo('#graph_data');
 					})
 				}
+				
+				$$.getJSON('/get_regions').done(function(data){
+					self.regions(data);
+				})
+				
 			}
+			
 			
 			ko.applyBindings(new AppViewModel());
 			
