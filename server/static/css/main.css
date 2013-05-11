@@ -25,23 +25,15 @@ body > #container {
 	
 }
 #dates_form input{
-	width:80px;
+	width:100px;
 }
 
 footer {
-	clear:both;
-	position:relative;
-	z-index: 9999;
-	height: 50px;
-	margin-top: -50px;
-	vertical-align: bottom;
 }
 
 
 
 .dash_container {
-	border: 1px solid #EEEEEE;
-	box-shadow: 0 1px 4px rgba(0, 0, 0.1, 0.2);
 	margin: 8px;
 	padding:10px;
 }

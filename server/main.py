@@ -1,6 +1,8 @@
+#-*- coding: utf-8 -*-
 import web
 import json
 from operator import itemgetter
+import numpy
 
 urls = (
     '/', 'Index',
@@ -23,7 +25,6 @@ class Data(object):
         granularity = params['granularity']
         print "GRANULARITY",granularity
         date_str = 'data as combined_date'
-        group = 'combined_date'
 
         if granularity=='monthly':
             date_str = 'strftime("%Y",date(data))||"-"||strftime("%m",date(data)) as combined_date'
@@ -36,43 +37,55 @@ class Data(object):
                                                               WHEN cast(strftime('%m', date(data)) as integer) BETWEEN 7 and 9 THEN 'q3'
                                                               ELSE 'q4' END as combined_date'''
         
-        #wez dane z wypadkow
-        
-        
         regions = db.select('wojewodztwa',where='id in (%s)'%",".join(params['regions']))
         
-        #wez te druge dane
-        #table = params['selected_condition'].split(',')[0]
-        #param = params['selected_condition'].split(',')[1]
-        #conditions = db.select(table,what=date_str+','+'avg('+param+') as '+param,where='wojewodztwo in (%s) AND data>="%s" AND data<="%s"'%(",".join(params['regions']),params['date_from'],params['date_to']),order='id',group=group)
+        if params['type'] in ['min_temp','max_temp']:
+            return json.dumps(self.weather(params,date_str,regions))
+        
+        else:
+            return json.dumps(self.default(params,date_str,regions))
         
         
-        result = {}
-        
-        
-        
+    def default(self,params,date_str,regions):         
         rows = {}
         for region in regions:
+            #dla kazdego wojewodztwa szukamy wypadkow i dodajemy
             accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
                                   what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
                                   where='wojewodztwo="%s" AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
-                                  order='data',group=group)
+                                  order='data',group='combined_date')
             rows[region['nazwa']]= {}
             for acc in accidents:
                 rows[region['nazwa']][acc['combined_date']]={'wypadki':acc['wypadki']}
-        #for c in conditions:
-        #    if rows.has_key(c['combined_date']):
-        #        rows[c['combined_date']][param]=c[param]
-        result['rows']=sorted(rows.items(),key=itemgetter(0))
-        
-        
-        #specjalny przypadek - swieta - co z nim zrobic?
-        
-        
-        #todo: obsluzyc rozne poziomy granulacji 
-        return json.dumps(result)
-        
-        
+
+ 
+        return {'rows': sorted(rows.items(),key=itemgetter(0)) }
+    def weather(self,params,date_str,regions):
+        rows = {}
+        for region in regions:
+            
+            data = {}
+            weather_data = db.select('pogoda',what=date_str+', '+params['type'],
+                                     where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
+                                     order='data')
+            accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
+                                  what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
+                                  where='wojewodztwo="%s" AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
+                                  order='data',group='combined_date')
+            
+            values = [r[params['type']] for r in weather_data]
+            
+            freq,bins = numpy.histogram(values)
+            bins = bins.round() # mozna je zrobic troche lepsze niz domyslne z numpy
+             
+            pos = numpy.digitize(values,bins) # numery binow
+            
+            zipped = zip(pos,accidents)
+            for bin_pos,acc in zipped:
+                bin_str = '%s do %s'%(bins[bin_pos-2],bins[bin_pos-1]) if bin_pos>1 else '< %s'%bins[bin_pos-1] 
+                data[bin_str] = {'wypadki': acc['wypadki']}
+            rows[region['nazwa']] = data 
+        return {'rows': sorted(rows.items(),key=itemgetter(0))}
         
 class Regions(object):
     def GET(self):
@@ -80,7 +93,7 @@ class Regions(object):
         print "regions",regions
         results = [ {'id':r['id'],'name':r['nazwa']} for r in regions]
         print "results",results
-        return json.dumps(results)
+        return json.dumps(sorted(results,key=lambda i: i['name']))
     
 if __name__=="__main__":
         app = web.application(urls, globals())

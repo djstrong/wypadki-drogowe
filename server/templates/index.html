@@ -16,65 +16,76 @@
 			<h1>Wypadki drogowe</h1>
 		</header>
 		<div id="container">
-			<div id="tables" style="float:left;" class="dash_container">
-			<form id="dates_form">
-				<fieldset  style="float:left;">
-					<legend>Daty od-do</legend>
-				<input type="text" id="date_from" data-bind="value: date_from"/>
-				<input type="text" id="date_to" data-bind="value: date_to"/>
-				</fieldset>
-				<fieldset style="float:left;">
-					<legend>Granulacja</legend>
-					<label><input type="radio" name="granularity" value="daily" data-bind="checked: date_granularity"/>Dziennie</label>
-					<br/>
-					<label><input type="radio" name="granularity" value="monthly" data-bind="checked: date_granularity"/>Miesiecznie</label>
-					<br />
-					<label><input type="radio" name="granularity" value="quarterly" data-bind="checked: date_granularity"/>Kwartalnie</label>
-					<br/>
-					<label><input type="radio" name="granularity" value="yearly" data-bind="checked: date_granularity"/>Rocznie</label>
-				</fieldset>
-			</form>
-			<fieldset>
-				<legend>Dane</legend>
-				<table id="data_table">
-					<thead>
-
-					</thead>
-					<tbody>
-						
-					</tbody>
-				</table>
-			</fieldset>
-			</div>
-			<div id="graph" style="float:left;" class="dash_container">
-				<fieldset>
-					<legend>Wykres</legend>
-					<div id="graph_data"></div>
-				</fieldset>
-			</div>
-			<div id="config" style="float:left;" class="dash_container">
-				<form id="config_form">
+			<div id="config" class="dash_container" style="float:left;">
+				<form id="dates_form" style="float:left;">
 					<fieldset>
-						<legend>Konfiguracja</legend>
-						<h3>Województwa</h3>
+						<legend>Daty od-do</legend>
+					<input type="text" id="date_from" data-bind="value: date_from"/>
+					<input type="text" id="date_to" data-bind="value: date_to"/>
+					</fieldset>
+					<fieldset>
+						<legend>Granulacja</legend>
+						<label><input type="radio" name="granularity" value="daily" data-bind="checked: date_granularity"/>Dziennie</label>
+						<br/>
+						<label><input type="radio" name="granularity" value="monthly" data-bind="checked: date_granularity"/>Miesiecznie</label>
+						<br />
+						<label><input type="radio" name="granularity" value="quarterly" data-bind="checked: date_granularity"/>Kwartalnie</label>
+						<br/>
+						<label><input type="radio" name="granularity" value="yearly" data-bind="checked: date_granularity"/>Rocznie</label>
+					</fieldset>
+				</form>
+				<form id="config_form" style="float:left;">
+					<fieldset>
+						<legend>Województwa</legend>
 						<div data-bind="foreach: regions">
 							<input type="checkbox" data-bind="value: $$data.id, checked: $$root.selected_regions, attr: {id: 'region_'+$$data.id}" />
 							<label data-bind="text: $$data.name, attr: {for: 'region_'+$$data.id}"></label>
 							<br/>
 						</div>
-						<br />
-						Warunki:
-						<div id="conditions" data-bind="foreach: conditions">
-							<input type="radio" name="condition" data-bind="checked: $$root.selected_condition, value: $$data, attr: {id: $$data}" /><label data-bind="text: $$data, attr: {for: $$data}"></label><br/>
-						</div>
-						<br/>
-						
-						
-						<input type="button" id="refresh_button" value="Odśwież" data-bind="click: refreshView"/>
 					</fieldset>
 				</form>
+				<form style="float:left;">
+					<fieldset>
+						<legend>Rodzaj zdarzen</legend>
+						<div id="conditions" data-bind="foreach: events">
+							<input type="radio" name="event" data-bind="checked: $$root.selected_event, value: $$data[0], attr: {id: $$data[0]}" /><label data-bind="text: $$data[1], attr: {for: $$data[0]}"></label><br/>
+						</div>
+					</fieldset>
+					
+				</form>
+				<form style="float:left;">
+					<fieldset>
+						<legend>Powiazania</legend>
+						<div id="type" data-bind="foreach: graph_types">
+							<input type="radio" name="graph_type" data-bind="checked: $$root.selected_type, value: $$data[0], attr: {id: $$data[0]}" /><label data-bind="text: $$data[1], attr: {for: $$data[0]}"></label><br/>
+						</div>
+						<br/>
+					</fieldset>
+				</form>
+				<input type="button" id="refresh_button" value="Odśwież" data-bind="click: refreshView" style="width:100%;"/>
+			</div>
+			
+			<div id="tables" style="clear:both;" class="dash_container">
+				<fieldset>
+					<legend>Dane</legend>
+					<table id="data_table">
+						<thead>
+	
+						</thead>
+						<tbody>
+							
+						</tbody>
+					</table>
+				</fieldset>
+			</div>
+			<div id="graph" class="dash_container">
+				<fieldset>
+					<legend>Wykres</legend>
+					<div id="graph_data"></div>
+				</fieldset>
 			</div>
 		</div>
+		
 		<footer>
 			Zaawansowane techniki integracji systemów
 		</footer>
@@ -84,7 +95,6 @@
 	</script>
 	<script type="text/javascript">
 		$$(document).ready(function(){
-			
 			function AppViewModel() {
 				var self = this;
 				
@@ -96,10 +106,14 @@
 				self.date_from = ko.observable('2008-04-01');
 				self.date_to = ko.observable('2013-04-15');
 				self.selected_regions = ko.observableArray();
-				self.selected_condition = ko.observable();
+				self.selected_event = ko.observable();
+				self.selected_type = ko.observable();
 				//Dummy data
 				self.cities = ['katowice','rzeszow'];
-				self.conditions = ko.observableArray([['pogoda','min_temp'],['pogoda','max_temp'],['pogoda','cisnienie']]);
+				self.events = ko.observableArray([['wypadki','Wypadki'],['zabici','Zabici'],['ranni','Ranni']]);
+				
+				self.graph_types = ko.observableArray([['default','Domyślny'],['max_temp','Max Temp']])
+				
 				
 				self.regions = ko.observableArray();
 				
@@ -114,7 +128,8 @@
 										date_from: self.date_from(),
 										date_to: self.date_to(),
 										regions: self.selected_regions(),
-										selected_condition: self.selected_condition(),
+										type:self.selected_type(),
+										event:self.selected_event(),
 										granularity: self.date_granularity()
 									}) 
 								}
@@ -135,19 +150,25 @@
 							var region = row[0]
 							var date_objs = row[1];
 							if(i==0){
+								var dates = []
 								for(var date in date_objs){
-									var th = $$('<th>')
-									th.html(date)
-									head_tr.append(th)
+									dates.push(date)
 								}
+								dates.sort()
+								for(var d=0;d<dates.length;d++){
+									var th = $$('<th>')
+									th.html(dates[d])
+									head_tr.append(th)	
+								}
+								
 							}
 							var tr = $$('<tr>')
 							var name = $$('<th>')
 							name.html(region)
 							tr.append(name)
-							for(var date in date_objs){
+							for(var d=0;d<dates.length;d++){
 								var td = $$('<td>')
-								td.html(date_objs[date].wypadki)
+								td.html(date_objs[dates[d]].wypadki)
 								tr.append(td);
 							}
 							tbody.append(tr)

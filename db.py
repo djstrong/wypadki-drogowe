@@ -1,3 +1,4 @@
+#-*- coding: utf-8 -*-
 import sqlite3
 import json
 import os.path
@@ -34,7 +35,7 @@ def create_db():
                                       zachod text,
                                       PRIMARY KEY (wojewodztwo, data),
                                       FOREIGN KEY(wojewodztwo) REFERENCES wojewodztwa(id))
-    )''')
+    ''')
     
     c.execute('''CREATE TABLE swieta (
                                       id integer primary key,
@@ -52,7 +53,7 @@ def fill_db():
     
     load_data('swieta.log',columns=['opis'],city=None,table='swieta')
     
-def load_data(filename,columns,city,table):
+def load_data(filename,columns,region,table):
     f = open(filename,'r')
     data = json.load(f,encoding='utf-8')
     c = conn.cursor()
@@ -60,10 +61,10 @@ def load_data(filename,columns,city,table):
     print ",".join(['data']+columns+['miasto'])
     for k,v in data.iteritems():
         x = [k]+[v.get(column,None) for column in columns]
-        if city:
-            x += [city]
+        if region:
+            x += [region]
         to_inserts.append(x)
-    c.executemany("INSERT INTO %s (%s) values (%s)"%(table,",".join(['data']+columns+['miasto'] if city else ['data']+columns),",".join(['?' for i in range(len(['data']+columns+['miasto'] if city else ['data']+columns))])),to_inserts)
+    c.executemany("INSERT INTO %s (%s) values (%s)"%(table,",".join(['data']+columns+['wojewodztwo'] if region else ['data']+columns),",".join(['?' for i in range(len(['data']+columns+['wojewodztwa'] if region else ['data']+columns))])),to_inserts)
     conn.commit()
     
 def load_wypadki(city):
@@ -76,14 +77,17 @@ def load_wypadki(city):
 if __name__=="__main__":
     #if os.path.exists('wypadki.db'):
     #    os.remove('wypadki.db')
-    conn = sqlite3.connect('wypadki.db')
-    try:
+        conn = sqlite3.connect('nowe.db')
+    #try:
         c = conn.cursor()
         #create_db()
         #fill_db()
-        load_data('rzeszow.json',columns= ['wypadki','zabici','ranni','nietrzezwi_kierowcy'],city='rzeszow',table='wypadki')
-    except Exception,e:
-        print "exception",e
+        region_id = c.execute('SELECT id from wojewodztwa where nazwa="%s"'%(u'śląskie')).fetchone()
+        print region_id
+        load_data('pogoda_Katowice.log',columns = ['max_temp','min_temp','wiatr','cisnienie','deszcz','snieg','wschod','zachod'],region=region_id[0],table='pogoda')
+        
+    #except Exception,e:
+    #    raise e
         
     
     
