@@ -80,11 +80,46 @@ if __name__=="__main__":
         conn = sqlite3.connect('nowe.db')
     #try:
         c = conn.cursor()
+        c.execute('drop table pogoda')
+        c.execute('''CREATE TABLE pogoda (
+                                      data DATE,
+                                      wojewodztwo INTEGER,
+                                      max_temp integer,
+                                      min_temp integer,
+                                      wiatr real,
+                                      cisnienie real,
+                                      deszcz text,
+                                      snieg text,
+                                      wschod text,
+                                      zachod text,
+                                      PRIMARY KEY (wojewodztwo, data),
+                                      FOREIGN KEY(wojewodztwo) REFERENCES wojewodztwa(id))
+    ''')
+        
         #create_db()
         #fill_db()
-        region_id = c.execute('SELECT id from wojewodztwa where nazwa="%s"'%(u'śląskie')).fetchone()
-        print region_id
-        load_data('pogoda_Katowice.log',columns = ['max_temp','min_temp','wiatr','cisnienie','deszcz','snieg','wschod','zachod'],region=region_id[0],table='pogoda')
+        region_capital = {
+                          u'dolnośląskie':'Wroclaw',
+                          u'podlaskie':'Bialystok',
+                          u'kujawsko-pomorskie':'Bydgoszcz',
+                          u'pomorskie':'Gdansk',
+                          u'śląskie':'Katowice',
+                          u'świętokrzyskie':'Kielce',
+                          u'małopolskie':'Krakow',
+                          u'lubelskie':'Lublin',
+                          u'warmińsko-mazurskie':'Olsztyn',
+                          u'opolskie':'Opole',
+                          u'wielkopolskie':'Poznan',
+                          u'podkarpackie':'Rzeszow',
+                          u'zachodniopomorskie':'Szczecin',
+                          u'mazowieckie':'Warszawa',
+                          u'lubuskie':'Zielona-Gora',
+                          u'łódzkie':'Lodz'
+                          }
+        regions = c.execute('SELECT id,nazwa from wojewodztwa').fetchall()
+        print regions
+        for region in regions:
+            load_data('pogoda_%s.log'%region_capital[region[1]],columns = ['max_temp','min_temp','wiatr','cisnienie','deszcz','snieg','wschod','zachod'],region=region[0],table='pogoda')
         
     #except Exception,e:
     #    raise e

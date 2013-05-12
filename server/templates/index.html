@@ -48,7 +48,7 @@
 					<fieldset>
 						<legend>Rodzaj zdarzen</legend>
 						<div id="conditions" data-bind="foreach: events">
-							<input type="radio" name="event" data-bind="checked: $$root.selected_event, value: $$data[0], attr: {id: $$data[0]}" /><label data-bind="text: $$data[1], attr: {for: $$data[0]}"></label><br/>
+							<input type="radio" name="event" data-bind="value: $$data[0], attr: {id: $$data[0]}, checked: $$root.selected_event" /><label data-bind="text: $$data[1], attr: {for: $$data[0]}"></label><br/>
 						</div>
 					</fieldset>
 					
@@ -57,7 +57,7 @@
 					<fieldset>
 						<legend>Powiazania</legend>
 						<div id="type" data-bind="foreach: graph_types">
-							<input type="radio" name="graph_type" data-bind="checked: $$root.selected_type, value: $$data[0], attr: {id: $$data[0]}" /><label data-bind="text: $$data[1], attr: {for: $$data[0]}"></label><br/>
+							<input type="radio" name="graph_type" data-bind="value: $$data[0], attr: {id: $$data[0]}, checked: $$root.selected_type" /><label data-bind="text: $$data[1], attr: {for: $$data[0]}"></label><br/>
 						</div>
 						<br/>
 					</fieldset>
@@ -106,11 +106,11 @@
 				self.date_from = ko.observable('2008-04-01');
 				self.date_to = ko.observable('2013-04-15');
 				self.selected_regions = ko.observableArray();
-				self.selected_event = ko.observable();
-				self.selected_type = ko.observable();
+				self.selected_event = ko.observable('wypadki');
+				self.selected_type = ko.observable('default');
 				//Dummy data
 				self.cities = ['katowice','rzeszow'];
-				self.events = ko.observableArray([['wypadki','Wypadki'],['zabici','Zabici'],['ranni','Ranni']]);
+				self.events = ko.observableArray([['wypadki','Wypadki'],['zabici','Zabici(nie dziala)'],['ranni','Ranni(nie dziala)']]);
 				
 				self.graph_types = ko.observableArray([['default','Domyślny'],['max_temp','Max Temp']])
 				
@@ -154,7 +154,15 @@
 								for(var date in date_objs){
 									dates.push(date)
 								}
-								dates.sort()
+								dates.sort(function(x,y){
+									if (x[0]=='<'){
+										return 0;
+									}
+									if (y[0]=='<'){
+										return 1;
+									}
+									return x>y;
+								})
 								for(var d=0;d<dates.length;d++){
 									var th = $$('<th>')
 									th.html(dates[d])

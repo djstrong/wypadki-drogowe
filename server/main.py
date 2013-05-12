@@ -64,7 +64,7 @@ class Data(object):
         rows = {}
         for region in regions:
             
-            data = {}
+            data = rows.get(region['nazwa'],{})
             weather_data = db.select('pogoda',what=date_str+', '+params['type'],
                                      where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
                                      order='data')
@@ -82,9 +82,13 @@ class Data(object):
             
             zipped = zip(pos,accidents)
             for bin_pos,acc in zipped:
-                bin_str = '%s do %s'%(bins[bin_pos-2],bins[bin_pos-1]) if bin_pos>1 else '< %s'%bins[bin_pos-1] 
-                data[bin_str] = {'wypadki': acc['wypadki']}
+                bin_str = '%s, %s'%(bins[bin_pos-2],bins[bin_pos-1]) if bin_pos>1 else '< %s'%bins[bin_pos-1]
+                if data.get(bin_str,None):
+                    data[bin_str]['wypadki']+=acc['wypadki']
+                else: 
+                    data[bin_str] = {'wypadki': acc['wypadki']}
             rows[region['nazwa']] = data 
+            print rows.items()
         return {'rows': sorted(rows.items(),key=itemgetter(0))}
         
 class Regions(object):
