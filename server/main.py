@@ -24,7 +24,7 @@ class Data(object):
         
         granularity = params['granularity']
         print "GRANULARITY",granularity
-        date_str = 'data as combined_date'
+        date_str = 'strftime("%Y-%m-%d",date(data)) as combined_date'
 
         if granularity=='monthly':
             date_str = 'strftime("%Y",date(data))||"-"||strftime("%m",date(data)) as combined_date'
@@ -39,14 +39,16 @@ class Data(object):
         
         regions = db.select('wojewodztwa',where='id in (%s)'%",".join(params['regions']))
         
-        if params['type'] in ['min_temp','max_temp']:
+        print "deciding"
+        if params['type'] in ['min_temp','max_temp','cisnienie']:
             return json.dumps(self.weather(params,date_str,regions))
         
         else:
             return json.dumps(self.default(params,date_str,regions))
         
         
-    def default(self,params,date_str,regions):         
+    def default(self,params,date_str,regions):
+        print "DEFAULT"         
         rows = {}
         for region in regions:
             #dla kazdego wojewodztwa szukamy wypadkow i dodajemy
@@ -54,12 +56,19 @@ class Data(object):
                                   what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
                                   where='wojewodztwo="%s" AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
                                   order='data',group='combined_date')
+            print "REGION: ",region['nazwa']
             rows[region['nazwa']]= {}
             for acc in accidents:
                 rows[region['nazwa']][acc['combined_date']]={'wypadki':acc['wypadki']}
+                
+            
+            
+                
 
  
-        return {'rows': sorted(rows.items(),key=itemgetter(0)) }
+        result =  {'rows': sorted(rows.items(),key=itemgetter(0)) }
+        print "RESULT",result
+        return result
     def weather(self,params,date_str,regions):
         rows = {}
         for region in regions:
@@ -70,7 +79,7 @@ class Data(object):
                                      order='data')
             accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
                                   what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
-                                  where='wojewodztwo="%s" AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
+                                  where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
                                   order='data',group='combined_date')
             
             values = [r[params['type']] for r in weather_data]
@@ -87,6 +96,7 @@ class Data(object):
                     data[bin_str]['wypadki']+=acc['wypadki']
                 else: 
                     data[bin_str] = {'wypadki': acc['wypadki']}
+            print "DATA",data
             rows[region['nazwa']] = data 
             print rows.items()
         return {'rows': sorted(rows.items(),key=itemgetter(0))}
