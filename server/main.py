@@ -42,9 +42,11 @@ class Data(object):
         print "deciding"
         if params['type'] in ['min_temp','max_temp','cisnienie']:
             return json.dumps(self.weather(params,date_str,regions))
-        
+        elif params['type']=='moon_phase':
+            return json.dumps(self.moon_phase(params,date_str,regions))
         else:
             return json.dumps(self.default(params,date_str,regions))
+        
         
         
     def default(self,params,date_str,regions):
@@ -59,7 +61,8 @@ class Data(object):
             print "REGION: ",region['nazwa']
             rows[region['nazwa']]= {}
             for acc in accidents:
-                rows[region['nazwa']][acc['combined_date']]={'wypadki':acc['wypadki']}
+                print params['event'],acc[params['event']]
+                rows[region['nazwa']][acc['combined_date']]={params['event']:acc[params['event']]}
                 
             
             
@@ -93,14 +96,38 @@ class Data(object):
             for bin_pos,acc in zipped:
                 bin_str = '%s, %s'%(bins[bin_pos-2],bins[bin_pos-1]) if bin_pos>1 else '< %s'%bins[bin_pos-1]
                 if data.get(bin_str,None):
-                    data[bin_str]['wypadki']+=acc['wypadki']
+                    data[bin_str][params['event']]+=acc[params['event']]
                 else: 
-                    data[bin_str] = {'wypadki': acc['wypadki']}
+                    data[bin_str] = {params['event']:acc[params['event']]}
             print "DATA",data
             rows[region['nazwa']] = data 
             print rows.items()
         return {'rows': sorted(rows.items(),key=itemgetter(0))}
         
+    def moon_phase(self,params,date_str,regions):
+        from moon import MoonPhase
+        import datetime
+        from mx import DateTime
+        rows = {}
+        for region in regions:
+            
+            data = rows.get(region['nazwa'],{})
+            accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
+                                  what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
+                                  where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
+                                  order='data',group='combined_date')
+            
+            
+            
+            for acc in accidents:
+                date = DateTime.strptime(acc['combined_date'],"%Y-%m-%d")
+                phase = MoonPhase(DateTime.DateTime(date)).phase_text
+                if data.get(phase,None):
+                    data[phase][params['event']]+=acc[params['event']]
+                else: 
+                    data[phase] = {params['event']: acc[params['event']]}
+            rows[region['nazwa']]=data
+        return {'rows': sorted(rows.items(),key=itemgetter(0))}
 class Regions(object):
     def GET(self):
         regions = db.select('wojewodztwa')

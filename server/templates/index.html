@@ -110,9 +110,9 @@
 				self.selected_type = ko.observable('default');
 				//Dummy data
 				self.cities = ['katowice','rzeszow'];
-				self.events = ko.observableArray([['wypadki','Wypadki'],['zabici','Zabici(nie dziala)'],['ranni','Ranni(nie dziala)']]);
+				self.events = ko.observableArray([['wypadki','Wypadki'],['zabici','Zabici'],['ranni','Ranni']]);
 				
-				self.graph_types = ko.observableArray([['default','Domyślny'],['max_temp','Max Temp'],['min_temp','Min Temp'],['cisnienie','Ciśnienie']])
+				self.graph_types = ko.observableArray([['default','Domyślny'],['max_temp','Max Temp'],['min_temp','Min Temp'],['cisnienie','Ciśnienie'],['moon_phase','Faza księzyca']])
 				
 				
 				self.regions = ko.observableArray();
@@ -176,7 +176,7 @@
 							tr.append(name)
 							for(var d=0;d<dates.length;d++){
 								var td = $$('<td>')
-								td.html(date_objs[dates[d]].wypadki)
+								td.html(date_objs[dates[d]][self.selected_event()])
 								tr.append(td);
 							}
 							tbody.append(tr)
