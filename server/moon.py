@@ -71,8 +71,10 @@ class MoonPhase:
         object."""
 
         if not isinstance(date, DateTime.DateTimeType):
+            print "from JDN",date
             self.date = DateTime.DateTimeFromJDN(date)
         else:
+            print "date ",date
             self.date = date
 
         self.__dict__.update(phase(self.date))
@@ -180,15 +182,15 @@ dcos = lambda d: cos(torad(d))
 def phase_string(p):
     phase_strings = (
         (NEW + PRECISION, "new"),
-        (FIRST - PRECISION, "first quarter"),
+        (FIRST - PRECISION, "waxing crescent"),
         (FIRST + PRECISION, "first quarter"),
-        (FULL - PRECISION, "full"), #UPRASZCZAM - PT (FULL - PRECISION, "waxing gibbous"),
+        (FULL - PRECISION, "waxing gibbous"), #UPRASZCZAM - PT (FULL - PRECISION, "waxing gibbous"),
         (FULL + PRECISION, "full"),
-        (LAST - PRECISION, "last quarter"),
+        (LAST - PRECISION, "wwaning gibbous"),
         (LAST + PRECISION, "last quarter"),
-        (NEXTNEW - PRECISION, "new"),
+        (NEXTNEW - PRECISION, "waning crescent"),
         (NEXTNEW + PRECISION, "new"))
-
+    
     i = bisect.bisect([a[0] for a in phase_strings], p)
 
     return phase_strings[i][1]
@@ -506,9 +508,21 @@ def kepler(m, ecc):
 #
 
 if __name__ == '__main__':
-    m = MoonPhase()
-    s = """The moon is %s, %.1f%% illuminated, %.1f days old.""" %\
-        (m.phase_text, m.illuminated * 100, m.age)
-    print (s)
-    print m.phase
-    print dir(m)
+    import sqlite3
+    import datetime
+    conn = sqlite3.connect('nowe.db')
+    cur = conn.cursor()
+    #c.execute("""CREATE TABLE moon_phase(
+    #                            data DATE,
+    #                            phase text
+    #)""")
+    start_date = datetime.date(2008,4,1)
+    end_date = datetime.date.today()
+    d = start_date
+    while d<end_date:
+        d_str = d.strftime('%Y-%m-%d')
+        print d_str
+        phase_text = MoonPhase(DateTime.DateFrom(d_str)).phase_text
+        cur.execute("INSERT into moon_phase VALUES(?,?)",(d_str,phase_text))
+        d += datetime.timedelta(days=1)
+    conn.commit()

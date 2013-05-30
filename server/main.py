@@ -105,9 +105,6 @@ class Data(object):
         return {'rows': sorted(rows.items(),key=itemgetter(0))}
         
     def moon_phase(self,params,date_str,regions):
-        from moon import MoonPhase
-        import datetime
-        from mx import DateTime
         rows = {}
         for region in regions:
             
@@ -117,15 +114,14 @@ class Data(object):
                                   where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
                                   order='data',group='combined_date')
             
+            phases = db.select('moon_phase',where='data>="%s" AND data<="%s"'%(params['date_from'],params['date_to']),order='data')
             
-            
-            for acc in accidents:
-                date = DateTime.strptime(acc['combined_date'],"%Y-%m-%d")
-                phase = MoonPhase(DateTime.DateTime(date)).phase_text
-                if data.get(phase,None):
-                    data[phase][params['event']]+=acc[params['event']]
+            for phase,acc in zip(phases,accidents):
+                phase_str = phase['phase']
+                if data.get(phase_str,None):
+                    data[phase_str][params['event']]+=acc[params['event']]
                 else: 
-                    data[phase] = {params['event']: acc[params['event']]}
+                    data[phase_str] = {params['event']: acc[params['event']]}
             rows[region['nazwa']]=data
         return {'rows': sorted(rows.items(),key=itemgetter(0))}
 class Regions(object):
