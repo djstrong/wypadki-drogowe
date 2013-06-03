@@ -9,7 +9,7 @@ if __name__=="__main__":
     
     #czy duzo, czy malo wypadkow na podstawie pogody
     c = conn.cursor()
-    for wypadki in ['wypadki','zabici','ranni']:
+    for wypadki in ['wypadki','zabici','ranni','kolizje']:
         wojewodztwa = c.execute("SELECT * from wojewodztwa").fetchall() 
         for w in wojewodztwa:
             print "WOJEWODZTWO",w
