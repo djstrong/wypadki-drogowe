@@ -512,10 +512,10 @@ if __name__ == '__main__':
     import datetime
     conn = sqlite3.connect('nowe.db')
     cur = conn.cursor()
-    #c.execute("""CREATE TABLE moon_phase(
-    #                            data DATE,
-    #                            phase text
-    #)""")
+    cur.execute("""CREATE TABLE moon_phase(
+                                data DATE,
+                                phase text
+    )""")
     start_date = datetime.date(2008,4,1)
     end_date = datetime.date.today()
     d = start_date

@@ -156,12 +156,12 @@
 								}
 								dates.sort(function(x,y){
 									if (x[0]=='<'){
-										return 0;
+										return -1;
 									}
 									if (y[0]=='<'){
 										return 1;
 									}
-									return x>y;
+									return x>y ? 1 : x==y ? 0 : -1;
 								})
 								for(var d=0;d<dates.length;d++){
 									var th = $$('<th>')
@@ -184,8 +184,8 @@
 						
 						//$$('#data_table').visualize({type:'line'});
 						$$('#graph_data').html('');
-						$$('#data_table').visualize({type:'bar'}).appendTo('#graph_data');
-						$$('#data_table').visualize({type:'line'}).appendTo('#graph_data');
+						$$('#data_table').visualize({type:'bar',width:800}).appendTo('#graph_data');
+						$$('#data_table').visualize({type:'line',width:800}).appendTo('#graph_data');
 					})
 				}
 				

@@ -52,6 +52,11 @@ class Data(object):
     def default(self,params,date_str,regions):
         print "DEFAULT"         
         rows = {}
+        reg_populations = {
+                           2:3.3,
+                           3:1.450000,
+                           9:4.620000
+                           }
         for region in regions:
             #dla kazdego wojewodztwa szukamy wypadkow i dodajemy
             accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
@@ -62,7 +67,7 @@ class Data(object):
             rows[region['nazwa']]= {}
             for acc in accidents:
                 print params['event'],acc[params['event']]
-                rows[region['nazwa']][acc['combined_date']]={params['event']:acc[params['event']]}
+                rows[region['nazwa']][acc['combined_date']]={params['event']:int(1.0*acc[params['event']])}
                 
             
             
@@ -81,7 +86,7 @@ class Data(object):
                                      where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
                                      order='data')
             accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
-                                  what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
+                                  what=date_str+',avg(wypadki) as wypadki,avg(zabici) as zabici,avg(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
                                   where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
                                   order='data',group='combined_date')
             
@@ -106,23 +111,29 @@ class Data(object):
         
     def moon_phase(self,params,date_str,regions):
         rows = {}
-        for region in regions:
-            
-            data = rows.get(region['nazwa'],{})
-            accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id',
-                                  what=date_str+',sum(wypadki) as wypadki,sum(zabici) as zabici,sum(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
-                                  where='wojewodztwo=%s AND data>="%s" AND data<="%s"'%(region['id'],params['date_from'],params['date_to']),
-                                  order='data',group='combined_date')
-            
-            phases = db.select('moon_phase',where='data>="%s" AND data<="%s"'%(params['date_from'],params['date_to']),order='data')
-            
-            for phase,acc in zip(phases,accidents):
-                phase_str = phase['phase']
-                if data.get(phase_str,None):
-                    data[phase_str][params['event']]+=acc[params['event']]
-                else: 
-                    data[phase_str] = {params['event']: acc[params['event']]}
-            rows[region['nazwa']]=data
+        phases = ['waning crescent', 'new', 'waxing crescent', 'first quarter', 'waxing gibbous', 'full', 'wwaning gibbous', 'last quarter']
+        region_list = [ dict(nazwa=r['nazwa'],id=r['id']) for r in regions]
+        for phase in phases:
+            print phase
+            for region in region_list:
+                print "region",region
+                if rows.get(region['nazwa'],None):
+                    print "jest data"
+                data = rows.get(region['nazwa'],{})
+                accidents = db.select('wypadki join wojewodztwa on wypadki.wojewodztwo=wojewodztwa.id join moon_phase on wypadki.data=moon_phase.data',
+                                      what='avg(wypadki) as wypadki,avg(zabici) as zabici,avg(ranni) as ranni, wojewodztwa.nazwa wojewodztwo',
+                                      where='wojewodztwo=%s AND wypadki.data>="%s" AND wypadki.data<="%s" AND phase="%s"'%(region['id'],params['date_from'],params['date_to'],phase)
+                                      )
+                
+                phases = db.select('moon_phase',where='data>="%s" AND data<="%s" and phase="%s"'%(params['date_from'],params['date_to'],phase),order='data')
+                
+                for phase,acc in zip(phases,accidents):
+                    phase_str = phase['phase']
+                    if data.get(phase_str,None):
+                        data[phase_str][params['event']]+=round(acc[params['event']])
+                    else: 
+                        data[phase_str] = {params['event']: round(acc[params['event']])}
+                rows[region['nazwa']]=data
         return {'rows': sorted(rows.items(),key=itemgetter(0))}
 class Regions(object):
     def GET(self):
